@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { backendBaseUrl } from "../utils/constant.js"
 
 const Register = () => {
     const [formData, setFormData] = useState({ name: "", email: "", password: "" });
@@ -15,7 +16,7 @@ const Register = () => {
         e.preventDefault();
         setError("");
         try {
-            const res = await axios.post("http://localhost:5000/api/auth/register", formData);
+            const res = await axios.post(`${backendBaseUrl}/api/auth/register`, formData);
             localStorage.setItem("token", res.data.token);
             alert("Registered Successfully");
         } catch (error) {

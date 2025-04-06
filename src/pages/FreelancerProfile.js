@@ -4,7 +4,7 @@ import { defaultImage } from "../utils/constant.js";
 import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
 import getCurrentLocation from "../utils/getLocation"; // adjust path if needed
-
+import { backendBaseUrl } from "../utils/constant.js"
 
 const FreelancerProfile = ({ userId }) => {
     const [form, setForm] = useState({
@@ -89,21 +89,29 @@ const FreelancerProfile = ({ userId }) => {
 
     const handleSubmit = async () => {
         try {
-            const data = new FormData();
-            data.append("name", form.name);
-            data.append("bio", form.bio);
-            data.append("location", form.location);
-            data.append("userId", userId);
+            const token = localStorage.getItem("token");
 
-            form.skills.forEach((skill, index) => {
-                data.append(`skills[${index}]`, skill);
-            });
+            const payload = {
+                name: form.name,
+                bio: form.bio,
+                location: form.location,
+                skills: form.skills,
+            };
 
-            if (form.image) {
-                data.append("image", form.image);
+            if (form.image && form.image.length > 0) {
+                payload.image = form.image;
             }
 
-            await axios.post("/api/freelancers", data);
+            console.log("Sending Payload:", payload);
+
+            console.log(payload)
+            await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
             alert("Profile updated!");
         } catch (error) {
             console.error("Error:", error);
@@ -222,13 +230,13 @@ const FreelancerProfile = ({ userId }) => {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                     <button
-                    onClick={handleDetectLocation}
-                    className="mt-2 text-sm text-blue-600 hover:underline"
-                >
-                    Detect My Location
-                </button>
+                        onClick={handleDetectLocation}
+                        className="mt-2 text-sm text-blue-600 hover:underline"
+                    >
+                        Detect My Location
+                    </button>
                 </div>
-                
+
 
                 {/* Hidden File Input */}
                 <input
