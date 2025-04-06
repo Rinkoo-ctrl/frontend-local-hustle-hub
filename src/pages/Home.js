@@ -32,7 +32,7 @@ const Home = () => {
                 className="text-center"
             >
                 <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
-                    Welcome to <TypingText text="Local Hustle Hub!" speed={70} pause={500} />
+                    Welcome to <TypingText text="Local Hustle Hub!" speed={80} pause={700} />
                 </h1>
 
                 <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto">

@@ -32,7 +32,7 @@ const TypingText = ({ text = "", speed = 150, pause = 1500 }) => {
     }, [text, index, deleting, speed, pause]); // ✅ All deps included
 
     return (
-        <span className="text-blue-700">{displayText}<span className="animate-pulse">|</span></span>
+        <span className="text-red-700">{displayText}<span className="animate-pulse">|</span></span>
     );
 };
 
