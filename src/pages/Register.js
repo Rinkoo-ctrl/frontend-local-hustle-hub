@@ -1,9 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
     const [formData, setFormData] = useState({ name: "", email: "", password: "" });
     const [error, setError] = useState("");
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,7 +25,14 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-            <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md">
+            <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md relative"> {/* Added relative positioning */}
+                <button
+                    onClick={() => navigate("/")}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-full text-gray-600 hover:text-red-600 flex items-center justify-center text-xl"
+                    aria-label="Close"
+                >
+                    &times;
+                </button>
                 <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Create an Account</h2>
                 {error && (
                     <div className="bg-red-100 text-red-700 p-2 rounded mb-4 text-sm text-center">
