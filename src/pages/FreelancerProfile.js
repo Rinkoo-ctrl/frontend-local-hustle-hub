@@ -3,6 +3,8 @@ import axios from "axios";
 import { defaultImage } from "../utils/constant.js";
 import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
+import getCurrentLocation from "../utils/getLocation"; // adjust path if needed
+
 
 const FreelancerProfile = ({ userId }) => {
     const [form, setForm] = useState({
@@ -74,6 +76,16 @@ const FreelancerProfile = ({ userId }) => {
                 setShowImageOptions(false);
             });
     };
+
+    const handleDetectLocation = async () => {
+        try {
+            const location = await getCurrentLocation();
+            setForm((prev) => ({ ...prev, location }));
+        } catch (error) {
+            alert(error);
+        }
+    };
+
 
     const handleSubmit = async () => {
         try {
@@ -209,7 +221,14 @@ const FreelancerProfile = ({ userId }) => {
                         placeholder="Enter your location"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
+                    <button
+                    onClick={handleDetectLocation}
+                    className="mt-2 text-sm text-blue-600 hover:underline"
+                >
+                    Detect My Location
+                </button>
                 </div>
+                
 
                 {/* Hidden File Input */}
                 <input
