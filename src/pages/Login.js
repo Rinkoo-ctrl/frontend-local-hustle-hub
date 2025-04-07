@@ -17,13 +17,24 @@ const Login = () => {
         setError("");
         try {
             const res = await axios.post(`${backendBaseUrl}/api/auth/login`, formData);
+
+            // 🟢 Save token
             localStorage.setItem("token", res.data.token);
 
-            navigate("/freelancer/profile");
+            // 🟢 Save user data (optional)
+            localStorage.setItem("Hustleuser", JSON.stringify(res.data.user));
+
+            // 🔄 Conditional Navigation
+            if (res.data.user.isFreelancer) {
+                navigate("/freelancer/dashboard");  // freelancer already has a profile
+            } else {
+                navigate("/freelancer/profile");  // show profile creation form
+            }
         } catch (error) {
             setError(error.response?.data?.message || "Something went wrong");
         }
     };
+
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

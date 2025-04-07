@@ -3,6 +3,7 @@ import Login from "./pages/Login.js";
 import Register from "./pages/Register.js";
 import Home from "./pages/Home";
 import FreelancerProfile from "./pages/FreelancerProfile";
+import FreelancerDashboard from "./pages/FreelancerDashboard";
 import AddService from "./pages/AddService";
 import ServiceList from "./pages/ServiceList";
 
@@ -13,7 +14,9 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/freelancer/profile" element={<FreelancerProfile userId="dummy-user-id" />} />
+        <Route path="/freelancer/profile" element={<FreelancerProfile />} />
+        <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+
         <Route path="/freelancer/add-service" element={<AddService freelancerId="dummy-freelancer-id" />} />
         <Route path="/services" element={<ServiceList />} />
 
