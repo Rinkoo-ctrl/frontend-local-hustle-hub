@@ -1,24 +1,39 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { backendBaseUrl } from "../utils/constant.js"
+import { backendBaseUrl } from "../utils/constant.js";
+import { FaUser, FaBriefcase } from "react-icons/fa"; // Icons for visual appeal
 
 const Register = () => {
-    const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        password: "",
+        role: "customer"  // default role
+    });
     const [error, setError] = useState("");
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    // Custom handler for role selection using card click
+    const handleRoleSelect = (role) => {
+        setFormData({ ...formData, role });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         try {
-            const res = await axios.post(`${backendBaseUrl}/api/auth/register`, formData);
-            localStorage.setItem("token", res.data.token);
+            await axios.post(`${backendBaseUrl}/api/auth/register`, formData);
+
             alert("Registered Successfully");
+
+            navigate("/login");
+
         } catch (error) {
             setError(error.response?.data?.message || "Something went wrong");
         }
@@ -26,7 +41,7 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-            <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-md relative"> {/* Added relative positioning */}
+            <div className="bg-white shadow-md rounded-xl p-8 w-full max-w-xl relative">
                 <button
                     onClick={() => navigate("/")}
                     className="absolute top-3 right-3 w-8 h-8 rounded-full text-gray-600 hover:text-red-600 flex items-center justify-center text-xl"
@@ -40,7 +55,7 @@ const Register = () => {
                         {error}
                     </div>
                 )}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                         <input
@@ -77,6 +92,32 @@ const Register = () => {
                             required
                         />
                     </div>
+
+                    {/* Enhanced Role Selection */}
+                    <div>
+                        <p className="block text-sm font-medium text-gray-700 mb-3">I am a:</p>
+                        <div className="flex space-x-4">
+                            <div
+                                onClick={() => handleRoleSelect("customer")}
+                                className={`cursor-pointer flex flex-col items-center justify-center border rounded-lg p-4 w-1/2 transition-all 
+                                    ${formData.role === "customer" ? "bg-gray-900 border-blue-600 text-white" : "bg-white border-gray-300 text-gray-700"} 
+                                    hover:shadow-lg`}
+                            >
+                                <FaUser size={15} />
+                                <span className="mt-2 font-semibold">Customer</span>
+                            </div>
+                            <div
+                                onClick={() => handleRoleSelect("freelancer")}
+                                className={`cursor-pointer flex flex-col items-center justify-center border rounded-lg p-4 w-1/2 transition-all 
+                                    ${formData.role === "freelancer" ? "bg-gray-900 border-blue-600 text-white" : "bg-white border-gray-300 text-gray-700"} 
+                                    hover:shadow-lg`}
+                            >
+                                <FaBriefcase size={15} />
+                                <span className="mt-2 font-semibold">Freelancer</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         className="w-full bg-gray-900 text-white py-2 rounded-lg hover:bg-gray-800 transition"
@@ -85,7 +126,10 @@ const Register = () => {
                     </button>
                 </form>
                 <p className="mt-4 text-sm text-center text-gray-500">
-                    Already have an account? <a href="/login" className="text-blue-700 hover:underline">Login here</a>
+                    Already have an account?{" "}
+                    <a href="/login" className="text-blue-700 hover:underline">
+                        Login here
+                    </a>
                 </p>
             </div>
         </div>

@@ -45,7 +45,7 @@ const Home = () => {
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="bg-blue-700 hover:bg-blue-800 text-white px-10 py-3 rounded-full shadow-xl transition duration-300 font-medium"
+                            className="bg-gray-800 hover:bg-gray-900 text-white px-10 py-3 rounded-full shadow-xl transition duration-300 font-medium"
                         >
                             Login
                         </motion.button>
