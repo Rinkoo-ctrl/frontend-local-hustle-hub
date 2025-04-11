@@ -21,14 +21,22 @@ const Login = () => {
             // 🟢 Save token
             localStorage.setItem("token", res.data.token);
 
-            // 🟢 Save user data (optional)
+            // 🟢 Save user data
             localStorage.setItem("Hustleuser", JSON.stringify(res.data.user));
 
-            // 🔄 Conditional Navigation
-            if (res.data.user.isFreelancer) {
-                navigate("/freelancer/dashboard");  // freelancer already has a profile
+            const user = res.data.user;
+            console.log(res, "---------->>>>>>")
+            // 🔄 Role-based Navigation
+            if (user.role === "customer") {
+                navigate("/customer/dashboard");
+            } else if (user.role === "freelancer") {
+                if (user.isFreelancer && user.freelancerProfile) {
+                    navigate("/freelancer/dashboard"); // Already has a profile
+                } else {
+                    navigate("/freelancer/profile"); // Needs to create a profile
+                }
             } else {
-                navigate("/freelancer/profile");  // show profile creation form
+                navigate("/"); // fallback
             }
         } catch (error) {
             setError(error.response?.data?.message || "Something went wrong");

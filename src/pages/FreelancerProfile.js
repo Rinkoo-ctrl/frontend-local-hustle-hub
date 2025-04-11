@@ -1,10 +1,9 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
-import { defaultImage } from "../utils/constant.js";
+import { defaultImage, backendBaseUrl } from "../utils/constant.js";
 import { useNavigate } from "react-router-dom";
 import Webcam from "react-webcam";
-import getCurrentLocation from "../utils/getLocation"; // adjust path if needed
-import { backendBaseUrl } from "../utils/constant.js"
+import { getCurrentLocation, getCoordinatesFromAddress } from "../utils/getLocation"; // Should return an object { address, coordinates }
 
 const FreelancerProfile = ({ userId }) => {
     const [form, setForm] = useState({
@@ -12,9 +11,11 @@ const FreelancerProfile = ({ userId }) => {
         bio: "",
         skillInput: "",
         skills: [],
-        location: "",
+        locations: [], // updated: now an array of location objects
         image: null,
     });
+    const [tempLocation, setTempLocation] = useState(""); // for manual location entry
+
     const navigate = useNavigate();
     const [showCamera, setShowCamera] = useState(false);
     const webcamRef = useRef(null);
@@ -40,7 +41,6 @@ const FreelancerProfile = ({ userId }) => {
         if (skill) {
             skill = skill.charAt(0).toUpperCase() + skill.slice(1).toLowerCase();
         }
-
         if (skill && !form.skills.includes(skill)) {
             setForm((prev) => ({
                 ...prev,
@@ -68,8 +68,8 @@ const FreelancerProfile = ({ userId }) => {
     const capturePhoto = () => {
         const imageSrc = webcamRef.current.getScreenshot();
         fetch(imageSrc)
-            .then(res => res.blob())
-            .then(blob => {
+            .then((res) => res.blob())
+            .then((blob) => {
                 const file = new File([blob], "captured.jpg", { type: "image/jpeg" });
                 setForm((prev) => ({ ...prev, image: file }));
                 setShowCamera(false);
@@ -77,41 +77,81 @@ const FreelancerProfile = ({ userId }) => {
             });
     };
 
+    // Update: Now returns an object with { address, coordinates }
     const handleDetectLocation = async () => {
         try {
             const location = await getCurrentLocation();
-            setForm((prev) => ({ ...prev, location }));
+            console.log(location, "------->");
+
+            const formattedLocation = {
+                address: location.address,
+                coordinates: location.coordinates || [0, 0],
+            };
+
+            const alreadyExists = form.locations.some(
+                (loc) => loc.address === formattedLocation.address
+            );
+
+            if (!alreadyExists) {
+                setForm((prev) => ({
+                    ...prev,
+                    locations: [...prev.locations, formattedLocation],
+                }));
+            }
         } catch (error) {
-            alert(error);
+            console.error("Error detecting location: ", error);
         }
     };
+
+
+    const handleAddManualLocation = async () => {
+        if (!tempLocation.trim()) return;
+
+        try {
+            const newLocation = await getCoordinatesFromAddress(tempLocation.trim());
+            console.log(newLocation, "<-------");
+            const alreadyExists = form.locations.some(
+                (loc) => loc.address.toLowerCase() === newLocation.address.toLowerCase()
+            );
+
+            if (!alreadyExists) {
+                setForm((prev) => ({
+                    ...prev,
+                    locations: [...prev.locations, newLocation],
+                }));
+            }
+
+            setTempLocation("");
+        } catch (error) {
+            console.error("Failed to add manual location", error);
+        }
+    };
+
 
 
     const handleSubmit = async () => {
         try {
             const token = localStorage.getItem("token");
 
+            // Prepare payload with locations array instead of a single location.
             const payload = {
                 name: form.name,
                 bio: form.bio,
-                location: form.location,
                 skills: form.skills,
+                locations: form.locations,
             };
 
-            if (form.image && form.image.length > 0) {
+            if (form.image) {
                 payload.image = form.image;
             }
 
             console.log("Sending Payload:", payload);
-
-            console.log(payload)
             await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                }
+                    "Content-Type": "application/json",
+                },
             });
-
             alert("Profile updated!");
         } catch (error) {
             console.error("Error:", error);
@@ -143,7 +183,6 @@ const FreelancerProfile = ({ userId }) => {
                             className="w-32 h-32 object-cover rounded-full shadow-lg border-4 border-white ring-2 ring-gray-400 cursor-pointer"
                             onClick={() => setShowImageOptions(true)}
                         />
-                        {/* Camera icon on hover */}
                         <div
                             className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                             onClick={() => setShowImageOptions(true)}
@@ -153,10 +192,11 @@ const FreelancerProfile = ({ userId }) => {
                     </div>
                 </div>
 
-
                 {/* Name */}
                 <div className="mb-5">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Full Name
+                    </label>
                     <input
                         type="text"
                         name="name"
@@ -169,7 +209,9 @@ const FreelancerProfile = ({ userId }) => {
 
                 {/* Bio */}
                 <div className="mb-5">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Bio</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Bio
+                    </label>
                     <textarea
                         name="bio"
                         value={form.bio}
@@ -181,7 +223,9 @@ const FreelancerProfile = ({ userId }) => {
 
                 {/* Skills */}
                 <div className="mb-5">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Skills</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Skills
+                    </label>
                     <div className="flex gap-2 mb-3">
                         <input
                             type="text"
@@ -189,7 +233,9 @@ const FreelancerProfile = ({ userId }) => {
                             value={form.skillInput}
                             onChange={handleChange}
                             placeholder="Enter a skill"
-                            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleSkillAdd())}
+                            onKeyDown={(e) =>
+                                e.key === "Enter" && (e.preventDefault(), handleSkillAdd())
+                            }
                             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                         <button
@@ -218,24 +264,60 @@ const FreelancerProfile = ({ userId }) => {
                     </div>
                 </div>
 
-                {/* Location */}
-                <div className="mb-8">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Location</label>
-                    <input
-                        type="text"
-                        name="location"
-                        value={form.location}
-                        onChange={handleChange}
-                        placeholder="Enter your location"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
+                {/* Locations Section */}
+                <div className="mb-4">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                        Locations
+                    </label>
+                    {/* Manual Location Input */}
+                    <div className="flex gap-2 mb-1">
+                        <input
+                            type="text"
+                            value={tempLocation}
+                            onChange={(e) => setTempLocation(e.target.value)}
+                            placeholder="Enter your location"
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        />
+                        <button
+                            onClick={handleAddManualLocation}
+                            className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
+                        >
+                            Add
+                        </button>
+                    </div>
+                    {/* Detect Current Location */}
                     <button
                         onClick={handleDetectLocation}
-                        className="mt-2 text-sm text-blue-600 hover:underline"
+                        className="mt-0 text-sm text-blue-600 hover:underline"
                     >
-                        Detect My Location
+                        Detect My Current Location
                     </button>
+                    {/* List of added locations */}
+                    <div className="mt-2">
+                        {form.locations && form.locations.map((loc, index) => (
+                            <div
+                                key={index}
+                                className="flex justify-between items-center border px-4 py-2 rounded mb-2"
+                            >
+                                <span className="text-sm">{loc.address}</span>
+                                <button
+                                    onClick={() =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            locations: prev.locations.filter((_, i) => i !== index),
+                                        }))
+                                    }
+                                    className="text-red-600 text-sm hover:text-red-800"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
+
+
 
 
                 {/* Hidden File Input */}
@@ -251,21 +333,21 @@ const FreelancerProfile = ({ userId }) => {
                 {showImageOptions && (
                     <div
                         className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
-                        onClick={() => setShowImageOptions(false)} // Close on backdrop click
+                        onClick={() => setShowImageOptions(false)}
                     >
                         <div
                             className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md text-center flex flex-col gap-4 border border-gray-200"
-                            onClick={(e) => e.stopPropagation()} // Prevent closing on modal content click
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            <h3 className="text-xl font-semibold text-gray-900">Select Image Option</h3>
-
+                            <h3 className="text-xl font-semibold text-gray-900">
+                                Select Image Option
+                            </h3>
                             <button
                                 onClick={() => document.getElementById("image-upload").click()}
                                 className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
                             >
                                 Upload from Device
                             </button>
-
                             <button
                                 onClick={() => {
                                     setShowCamera(true);
@@ -275,7 +357,6 @@ const FreelancerProfile = ({ userId }) => {
                             >
                                 Capture via Camera
                             </button>
-
                             <button
                                 onClick={() => {
                                     handleRemoveImage();
@@ -285,7 +366,6 @@ const FreelancerProfile = ({ userId }) => {
                             >
                                 Remove Current Image
                             </button>
-
                             <button
                                 onClick={() => setShowImageOptions(false)}
                                 className="text-sm text-gray-800 hover:text-gray-700 transition-all"
@@ -296,16 +376,15 @@ const FreelancerProfile = ({ userId }) => {
                     </div>
                 )}
 
-
                 {/* Webcam Camera Modal */}
                 {showCamera && (
                     <div
                         className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
-                        onClick={() => setShowCamera(false)} // Close on backdrop click
+                        onClick={() => setShowCamera(false)}
                     >
                         <div
                             className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md text-center flex flex-col gap-4 border border-gray-200 relative"
-                            onClick={(e) => e.stopPropagation()} // Prevent closing on modal content click
+                            onClick={(e) => e.stopPropagation()}
                         >
                             <button
                                 onClick={() => setShowCamera(false)}
@@ -314,9 +393,9 @@ const FreelancerProfile = ({ userId }) => {
                             >
                                 ×
                             </button>
-
-                            <h3 className="text-xl font-semibold text-gray-900">Capture Photo</h3>
-
+                            <h3 className="text-xl font-semibold text-gray-900">
+                                Capture Photo
+                            </h3>
                             <Webcam
                                 audio={false}
                                 ref={webcamRef}
@@ -324,14 +403,12 @@ const FreelancerProfile = ({ userId }) => {
                                 videoConstraints={{ facingMode: "user" }}
                                 className="rounded-lg w-full aspect-video object-cover"
                             />
-
                             <button
                                 onClick={capturePhoto}
                                 className="w-full bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition-all"
                             >
                                 Capture Photo
                             </button>
-
                             <button
                                 onClick={() => setShowCamera(false)}
                                 className="text-sm text-gray-800 hover:text-gray-700 transition-all"
@@ -341,7 +418,6 @@ const FreelancerProfile = ({ userId }) => {
                         </div>
                     </div>
                 )}
-
 
                 {/* Submit Button */}
                 <button
