@@ -1,22 +1,25 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-
 import Webcam from "react-webcam";
 import { defaultImage, backendBaseUrl } from "../utils/constant.js";
-import getCurrentLocation from "../utils/getLocation"; // adjust path if needed
+import { getCurrentLocation, getCoordinatesFromAddress } from "../utils/getLocation";
 
 const EditableProfileSection = () => {
-
     const [profile, setProfile] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+
     const [form, setForm] = useState({
         name: "",
         bio: "",
         skillInput: "",
         skills: [],
-        location: "",
+        locations: [], // now an array to hold multiple locations
         image: null,
     });
+
+    // Temp state for manual location input
+    const [tempLocation, setTempLocation] = useState("");
+
     const [showCamera, setShowCamera] = useState(false);
     const [showImageOptions, setShowImageOptions] = useState(false);
     const webcamRef = useRef(null);
@@ -31,7 +34,7 @@ const EditableProfileSection = () => {
             bio: freelancerProfile.bio || "",
             skills: freelancerProfile.skills || [],
             skillInput: "",
-            location: freelancerProfile.location || "",
+            locations: freelancerProfile.locations || [], // use array for multiple locations
             image: freelancerProfile.image || null,
         });
     }, []);
@@ -90,23 +93,49 @@ const EditableProfileSection = () => {
     const handleDetectLocation = async () => {
         try {
             const location = await getCurrentLocation();
-            setForm((prev) => ({ ...prev, location }));
+            // Expected to return an object: { address, coordinates }
+            setForm((prev) => ({
+                ...prev,
+                locations: [...prev.locations, location],
+            }));
         } catch (error) {
             alert(error);
         }
     };
 
+    const handleAddManualLocation = async () => {
+        if (!tempLocation.trim()) return;
+
+        try {
+            const newLocation = await getCoordinatesFromAddress(tempLocation.trim());
+            console.log(newLocation, "<-------");
+            const alreadyExists = form.locations.some(
+                (loc) => loc.address.toLowerCase() === newLocation.address.toLowerCase()
+            );
+
+            if (!alreadyExists) {
+                setForm((prev) => ({
+                    ...prev,
+                    locations: [...prev.locations, newLocation],
+                }));
+            }
+
+            setTempLocation("");
+        } catch (error) {
+            console.error("Failed to add manual location", error);
+        }
+    };
+
+
     // Save profile changes
     const handleSubmit = async () => {
         try {
-
-
             const token = localStorage.getItem("token");
 
             const payload = {
                 name: form.name,
                 bio: form.bio,
-                location: form.location,
+                locations: form.locations, // sending as array
                 skills: form.skills,
             };
 
@@ -115,30 +144,24 @@ const EditableProfileSection = () => {
             }
 
             console.log("Sending Payload:", payload);
-
-            console.log(payload)
             await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                }
+                    "Content-Type": "application/json",
+                },
             });
 
-            // alert("Profile updated successfully!");
             setIsEditing(false);
-            // Update local state with new profile data.
             setProfile({
                 ...form,
                 skills: form.skills,
             });
-            // Optionally update localStorage if needed.
         } catch (error) {
             console.error("Error updating profile:", error);
             alert("Something went wrong while updating the profile.");
         }
     };
 
-    // Image preview (from file or URL)
     const imagePreview = form.image
         ? typeof form.image === "string"
             ? form.image
@@ -163,7 +186,6 @@ const EditableProfileSection = () => {
             </div>
 
             {isEditing ? (
-                // Edit Mode Form
                 <div className="space-y-6">
                     <div className="flex flex-col items-center gap-3 mb-6">
                         <div className="relative group">
@@ -177,7 +199,9 @@ const EditableProfileSection = () => {
                                 className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                                 onClick={() => setShowImageOptions(true)}
                             >
-                                <span className="text-white text-sm font-medium">Change</span>
+                                <span className="text-white text-sm font-medium">
+                                    Change
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -255,25 +279,56 @@ const EditableProfileSection = () => {
                         </div>
                     </div>
 
-                    {/* Location */}
+                    {/* Location Section */}
                     <div className="mb-8">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Location
+                            Locations
                         </label>
-                        <input
-                            type="text"
-                            name="location"
-                            value={form.location}
-                            onChange={handleChange}
-                            placeholder="Enter your location"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
+                        {/* Manual Location Input */}
+                        <div className="flex gap-2 mb-3">
+                            <input
+                                type="text"
+                                value={tempLocation}
+                                onChange={(e) => setTempLocation(e.target.value)}
+                                placeholder="Enter your location"
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
+                            <button
+                                onClick={handleAddManualLocation}
+                                className="bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
+                            >
+                                Add
+                            </button>
+                        </div>
+                        {/* Detect My Location Button */}
                         <button
                             onClick={handleDetectLocation}
                             className="mt-2 text-sm text-blue-600 hover:underline"
                         >
                             Detect My Location
                         </button>
+                        {/* List of Added Locations */}
+                        <div className="mt-3 space-y-2">
+                            {form.locations && form.locations.length > 0 && form.locations.map((loc, index) => (
+                                <div
+                                    key={index}
+                                    className="flex justify-between items-center border px-4 py-2 rounded shadow-sm"
+                                >
+                                    <span className="text-sm">{loc.address}</span>
+                                    <button
+                                        onClick={() =>
+                                            setForm((prev) => ({
+                                                ...prev,
+                                                locations: prev.locations.filter((_, i) => i !== index),
+                                            }))
+                                        }
+                                        className="text-red-600 text-sm"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     {/* Hidden File Input */}
@@ -299,9 +354,7 @@ const EditableProfileSection = () => {
                                     Select Image Option
                                 </h3>
                                 <button
-                                    onClick={() =>
-                                        document.getElementById("image-upload").click()
-                                    }
+                                    onClick={() => document.getElementById("image-upload").click()}
                                     className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
                                 >
                                     Upload from Device
@@ -408,7 +461,6 @@ const EditableProfileSection = () => {
                         </h2>
                         <p className="text-lg text-gray-500">{profile?.title || ""}</p>
                     </div>
-
                     {/* Detailed Profile Information */}
                     <div className="md:col-span-2 space-y-6">
                         {profile?.bio && (
@@ -421,16 +473,16 @@ const EditableProfileSection = () => {
                                 </p>
                             </div>
                         )}
-
-                        {profile?.location && (
+                        {profile?.locations && profile.locations.length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-blue-900 mb-2">
                                     Location
                                 </h3>
-                                <p className="text-gray-700">{profile.location}</p>
+                                <p className="text-gray-700">
+                                    {profile.locations.map((loc) => loc.address).join(", ")}
+                                </p>
                             </div>
                         )}
-
                         {profile?.skills && profile.skills.length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-blue-900 mb-2">
@@ -448,7 +500,6 @@ const EditableProfileSection = () => {
                                 </div>
                             </div>
                         )}
-
                         {profile?.website && (
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
@@ -464,7 +515,6 @@ const EditableProfileSection = () => {
                                 </a>
                             </div>
                         )}
-
                         {profile?.email && (
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
