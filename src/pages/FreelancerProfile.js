@@ -111,8 +111,8 @@ const FreelancerProfile = ({ userId }) => {
                     'Content-Type': 'application/json',
                 }
             });
+            navigate("/freelancer/dashboard");
 
-            alert("Profile updated!");
         } catch (error) {
             console.error("Error:", error);
             alert("Something went wrong!");
