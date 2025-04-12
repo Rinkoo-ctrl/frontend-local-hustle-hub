@@ -3,7 +3,7 @@ import Login from "./pages/Login.js";
 import Register from "./pages/Register.js";
 import Home from "./pages/Home";
 import FreelancerProfile from "./pages/FreelancerProfile";
-import FreelancerDashboard from "./pages/FreelancerDashboard";
+import FreelancerDashboard from "./pages/FreelancerDashboard.js";
 import AddService from "./pages/AddService";
 import ServiceList from "./pages/ServiceList";
 import CustomerDashboard from "./pages/customerDashboard"; 

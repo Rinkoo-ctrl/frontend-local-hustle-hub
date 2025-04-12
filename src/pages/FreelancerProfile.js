@@ -146,12 +146,24 @@ const FreelancerProfile = ({ userId }) => {
             }
 
             console.log("Sending Payload:", payload);
-            await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
+            const response = await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
             });
+
+            // ✅ Update existing Hustleuser object with freelancerProfile
+            const freelancerProfile = response.data;
+            const existingUser = JSON.parse(localStorage.getItem("Hustleuser"));
+
+            const updatedUser = {
+                ...existingUser,
+                freelancerProfile: freelancerProfile,
+            };
+
+            localStorage.setItem("Hustleuser", JSON.stringify(updatedUser));
+
             navigate("/freelancer/dashboard");
 
         } catch (error) {

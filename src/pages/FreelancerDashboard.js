@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
-import ProfileSection from "../components/ProfileSection";
+import ProfileSection from "../components/ProfileSection.jsx";
 import ServiceForm from "../components/ServiceForm";
 import ServiceList from "../components/ServiceList";
 
