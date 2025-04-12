@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Webcam from "react-webcam";
 import { defaultImage, backendBaseUrl } from "../utils/constant.js";
-import { getCurrentLocation, getCoordinatesFromAddress } from "../utils/getLocation";
+import { getCurrentLocation, getCoordinatesFromAddress, normalizeLocations } from "../utils/getLocation";
 
 const EditableProfileSection = () => {
     const [profile, setProfile] = useState(null);
@@ -93,13 +93,25 @@ const EditableProfileSection = () => {
     const handleDetectLocation = async () => {
         try {
             const location = await getCurrentLocation();
-            // Expected to return an object: { address, coordinates }
-            setForm((prev) => ({
-                ...prev,
-                locations: [...prev.locations, location],
-            }));
+            console.log(location, "------->");
+
+            const formattedLocation = {
+                address: location.address,
+                coordinates: location.coordinates || [0, 0],
+            };
+
+            const alreadyExists = form.locations.some(
+                (loc) => loc.address === formattedLocation.address
+            );
+
+            if (!alreadyExists) {
+                setForm((prev) => ({
+                    ...prev,
+                    locations: [...prev.locations, formattedLocation],
+                }));
+            }
         } catch (error) {
-            alert(error);
+            console.error("Error detecting location: ", error);
         }
     };
 
@@ -135,7 +147,7 @@ const EditableProfileSection = () => {
             const payload = {
                 name: form.name,
                 bio: form.bio,
-                locations: form.locations, // sending as array
+                locations: normalizeLocations(form.locations), // sending as array
                 skills: form.skills,
             };
 
@@ -144,7 +156,7 @@ const EditableProfileSection = () => {
             }
 
             console.log("Sending Payload:", payload);
-            await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
+            const response = await axios.post(`${backendBaseUrl}/api/freelancers`, payload, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -156,6 +168,17 @@ const EditableProfileSection = () => {
                 ...form,
                 skills: form.skills,
             });
+            // ✅ Update existing Hustleuser object with freelancerProfile
+            const freelancerProfile = response.data;
+            const existingUser = JSON.parse(localStorage.getItem("Hustleuser"));
+
+            const updatedUser = {
+                ...existingUser,
+                freelancerProfile: freelancerProfile,
+            };
+
+            localStorage.setItem("Hustleuser", JSON.stringify(updatedUser));
+
         } catch (error) {
             console.error("Error updating profile:", error);
             alert("Something went wrong while updating the profile.");
@@ -474,15 +497,21 @@ const EditableProfileSection = () => {
                             </div>
                         )}
                         {profile?.locations && profile.locations.length > 0 && (
-                            <div>
-                                <h3 className="text-lg font-bold text-blue-900 mb-2">
-                                    Location
+                            <div >
+                                <h3 className="text-lg font-bold text-blue-900 mb-3 border-b border-blue-200 pb-1">
+                                    Locations
                                 </h3>
-                                <p className="text-gray-700">
-                                    {profile.locations.map((loc) => loc.address).join(", ")}
-                                </p>
+                                <ul className="space-y-2">
+                                    {profile.locations.map((loc, index) => (
+                                        <li key={index} className="text-gray-800 pl-2 relative">
+                                            <span className="absolute left-0 top-1.5 w-1.5 h-1.5 bg-gray-600 rounded-full"></span>
+                                            <span className="ml-4">{loc.address}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             </div>
                         )}
+
                         {profile?.skills && profile.skills.length > 0 && (
                             <div>
                                 <h3 className="text-lg font-bold text-blue-900 mb-2">

@@ -55,4 +55,21 @@ const getCoordinatesFromAddress = async (address) => {
     }
 };
 
-module.exports = { getCurrentLocation, getCoordinatesFromAddress };
+const normalizeLocations = (locations) => {
+    if (!locations || !Array.isArray(locations)) return [];
+    return locations.map(loc => {
+      // Agar already coordinates hai, return loc as it is
+      if (loc.coordinates && Array.isArray(loc.coordinates)) return loc;
+      // Agar latitude and longitude available hai, create coordinates field as [lng, lat]
+      if (loc.latitude != null && loc.longitude != null) {
+        return { 
+          ...loc, 
+          coordinates: [loc.longitude, loc.latitude] 
+        };
+      }
+      return loc;
+    });
+  };
+  
+
+module.exports = { getCurrentLocation, getCoordinatesFromAddress,normalizeLocations };
