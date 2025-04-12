@@ -6,6 +6,7 @@ import FreelancerProfile from "./pages/FreelancerProfile";
 import FreelancerDashboard from "./pages/FreelancerDashboard";
 import AddService from "./pages/AddService";
 import ServiceList from "./pages/ServiceList";
+import CustomerDashboard from "./pages/customerDashboard"; 
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
         <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
 
         <Route path="/freelancer/add-service" element={<AddService freelancerId="dummy-freelancer-id" />} />
         <Route path="/services" element={<ServiceList />} />
