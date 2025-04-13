@@ -9,14 +9,15 @@ const LocationInput = ({ onLocationSelect }) => {
                     lng: position.coords.longitude,
                 });
             },
-            (err) => alert("Location access denied")
+            (err) => alert("Location access denied"),
+            { enableHighAccuracy: true }
         );
     };
 
     return (
         <div>
-            <button onClick={getLocation} className="bg-blue-500 text-white px-3 py-2 rounded">
-                📍 Use Current Location
+            <button onClick={getLocation} className="bg-blue-700 text-white hover:bg-blue-900 px-3 py-2 rounded">
+                Use Current Location
             </button>
         </div>
     );

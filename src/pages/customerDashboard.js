@@ -3,6 +3,7 @@ import axios from "axios";
 import CategoryFilter from "../components/CategoryFilter.jsx";
 import ServiceCard from "../components/ServiceCard.jsx";
 import LocationInput from "../components/LocationInput.jsx";
+import { backendBaseUrl } from "../utils/constant.js";
 
 const CustomerDashboard = () => {
     const [category, setCategory] = useState("");
@@ -15,12 +16,18 @@ const CustomerDashboard = () => {
             if (!location.lat || !location.lng) return;
             setLoading(true);
             try {
-                const res = await axios.get(`/api/services`, {
+                console.log(location, category, "--------------->>>>>>>>>>");
+
+                const token = localStorage.getItem("token");
+                const res = await axios.get(`${backendBaseUrl}/api/services/by-location`, {
                     params: {
                         lat: location.lat,
                         lng: location.lng,
                         category,
                     },
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 });
                 setServices(res.data);
             } catch (err) {
@@ -30,6 +37,7 @@ const CustomerDashboard = () => {
         };
         fetchServices();
     }, [location, category]);
+
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
