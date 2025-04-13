@@ -16,8 +16,6 @@ const CustomerDashboard = () => {
             if (!location.lat || !location.lng) return;
             setLoading(true);
             try {
-                console.log(location, category, "--------------->>>>>>>>>>");
-
                 const token = localStorage.getItem("token");
                 const res = await axios.get(`${backendBaseUrl}/api/services/by-location`, {
                     params: {
@@ -29,6 +27,7 @@ const CustomerDashboard = () => {
                         Authorization: `Bearer ${token}`
                     }
                 });
+                console.log(res.data, "+++++++++++++++=>")
                 setServices(res.data);
             } catch (err) {
                 console.error("Error fetching services:", err);
