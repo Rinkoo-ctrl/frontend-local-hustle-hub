@@ -1,7 +1,10 @@
 import React from "react";
 import { FaMapMarkerAlt, FaStar } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const ServiceCard = ({ service }) => {
+    const navigate = useNavigate();
+
     const distanceText =
         service.distance !== undefined
             ? `${Number(service.distance).toFixed(2)} km away`
@@ -25,14 +28,14 @@ const ServiceCard = ({ service }) => {
                         {service.status.toUpperCase()}
                     </div>
                 )}
-                <span className="text-gray-400 text-lg font-medium">Service</span>
+                <span className="text-gray-400 text-lg font-medium">{service.category}</span>
             </div>
 
             {/* Content Section */}
             <div className="p-6">
                 {/* Title and category */}
                 <h3 className="text-xl font-semibold text-gray-900 mb-1">{service.name}</h3>
-                <p className="text-sm text-gray-600 capitalize mb-3">{service.category}</p>
+                {/* <p className="text-sm text-gray-600 capitalize mb-3">{service.category}</p> */}
 
                 {/* Description */}
                 {service.description && (
@@ -57,7 +60,7 @@ const ServiceCard = ({ service }) => {
                     <button className="flex-1 bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium">
                         View Profile
                     </button>
-                    <button className="flex-1 bg-green-900 text-white py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium">
+                    <button onClick={() => navigate(`/book/${service._id}`)} className="flex-1 bg-green-900 text-white py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium">
                         Book Now
                     </button>
                 </div>

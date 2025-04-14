@@ -6,7 +6,8 @@ import FreelancerProfile from "./pages/FreelancerProfile";
 import FreelancerDashboard from "./pages/FreelancerDashboard.js";
 import AddService from "./pages/AddService";
 import ServiceList from "./pages/ServiceList";
-import CustomerDashboard from "./pages/customerDashboard"; 
+import CustomerDashboard from "./pages/customerDashboard";
+import BookService from "./pages/BookService.js";
 
 function App() {
   return (
@@ -17,10 +18,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/freelancer/profile" element={<FreelancerProfile />} />
         <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
-        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-
         <Route path="/freelancer/add-service" element={<AddService freelancerId="dummy-freelancer-id" />} />
+        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
         <Route path="/services" element={<ServiceList />} />
+        <Route path="/book/:serviceId" element={<BookService />} />
 
         <Route path="*" element={<div className="text-center mt-10">Page Not Found</div>} />
       </Routes>
