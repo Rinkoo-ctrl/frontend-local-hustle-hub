@@ -10,6 +10,7 @@
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.21",
     "axios": "^1.8.4",
+    "dayjs": "^1.11.13",
     "framer-motion": "^12.6.3",
     "lucide-react": "^0.487.0",
     "postcss": "^8.5.3",
