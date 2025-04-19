@@ -127,18 +127,20 @@ const CustomerDashboard = () => {
                                         <button
                                             onClick={() => setPage(1)}
                                             disabled={page === 1}
-                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
+                                            title="First Page"
                                         >
-                                            First
+                                            «
                                         </button>
 
                                         {/* Previous Page */}
                                         <button
                                             onClick={() => setPage(prev => Math.max(prev - 1, 1))}
                                             disabled={page === 1}
-                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
+                                            title="Previous Page"
                                         >
-                                            Prev
+                                            ‹
                                         </button>
 
                                         {/* Page Indicator */}
@@ -150,20 +152,24 @@ const CustomerDashboard = () => {
                                         <button
                                             onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
                                             disabled={page === totalPages}
-                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
+                                            title="Next Page"
                                         >
-                                            Next
+                                            ›
                                         </button>
 
                                         {/* Last Page Button */}
                                         <button
                                             onClick={() => setPage(totalPages)}
                                             disabled={page === totalPages}
-                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+                                            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
+                                            title="Last Page"
                                         >
-                                            Last
+                                            »
                                         </button>
                                     </div>
+
+
 
                                 </>
                             )}
