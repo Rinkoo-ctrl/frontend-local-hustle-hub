@@ -1,3 +1,4 @@
+// src/pages/CustomerDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import CategoryFilter from "../components/CategoryFilter.jsx";
@@ -20,20 +21,15 @@ const CustomerDashboard = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
-    // Get location on load
+    // 1. Get geolocation or fallback
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(
-            pos => {
-                setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            },
-            err => {
-                console.warn("Location denied, using fallback");
-                setLocation({ lat: 28.6139, lng: 77.2090 }); // Delhi fallback
-            }
+            pos => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => setLocation({ lat: 28.6139, lng: 77.2090 }) // Delhi fallback
         );
     }, []);
 
-    // Fetch services when location/search/category/page changes
+    // 2. Fetch services on filters/search/page/location
     useEffect(() => {
         if (!location) return;
 
@@ -41,7 +37,6 @@ const CustomerDashboard = () => {
             setLoading(true);
             try {
                 const token = localStorage.getItem("token");
-
                 const params = {
                     lat: location.lat,
                     lng: location.lng,
@@ -50,14 +45,12 @@ const CustomerDashboard = () => {
                     page,
                     limit: 6,
                 };
-
-                const res = await axios.get(`${backendBaseUrl}/api/services`, {
+                const { data } = await axios.get(`${backendBaseUrl}/api/services`, {
                     params,
                     headers: { Authorization: `Bearer ${token}` },
                 });
-
-                setServices(res.data.services || []);
-                setTotalPages(res.data.totalPages || 1);
+                setServices(data.services || []);
+                setTotalPages(data.totalPages || 1);
             } catch (err) {
                 console.error("Error fetching services:", err);
                 setServices([]);
@@ -68,14 +61,23 @@ const CustomerDashboard = () => {
         fetchServices();
     }, [searchTerm, categories, location, page]);
 
+    // helper to reset to first page when filters/search change
+    const resetAndSetPage = (setter) => (value) => {
+        setter(value);
+        setPage(1);
+    };
+
     return (
         <div className="flex h-screen bg-gray-50">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
             <div className="flex-1 flex flex-col">
                 <Topbar user={{ name: customer.fullName, image: customer.image }} />
+
                 <main className="p-6 overflow-auto flex-1">
                     {activeTab === "services" && (
                         <>
+                            {/* ————— Header ————— */}
                             <header className="mb-6 text-center">
                                 <h1 className="text-3xl font-extrabold text-gray-800">
                                     Skilled Help, Just a Click Away!
@@ -85,26 +87,22 @@ const CustomerDashboard = () => {
                                 </p>
                             </header>
 
+                            {/* ————— Filters & Search ————— */}
                             <div className="flex flex-col md:flex-row gap-4 items-center justify-center mb-6">
                                 <input
                                     type="text"
                                     placeholder="Search services..."
                                     value={searchTerm}
-                                    onChange={e => {
-                                        setSearchTerm(e.target.value);
-                                        setPage(1); // reset to page 1
-                                    }}
+                                    onChange={e => resetAndSetPage(setSearchTerm)(e.target.value)}
                                     className="px-4 py-2 border rounded w-full md:w-1/3 focus:ring"
                                 />
                                 <CategoryFilter
                                     selected={categories}
-                                    onChange={(newCategories) => {
-                                        setCategories(newCategories);
-                                        setPage(1); // reset to page 1
-                                    }}
+                                    onChange={resetAndSetPage(setCategories)}
                                 />
                             </div>
 
+                            {/* ————— Service Grid or Loading/Empty ————— */}
                             {loading ? (
                                 <div className="flex justify-center mt-10">
                                     <span className="text-gray-600">Loading…</span>
@@ -121,9 +119,9 @@ const CustomerDashboard = () => {
                                         ))}
                                     </div>
 
-                                    {/* Pagination Buttons */}
+                                    {/* ————— Pagination Controls ————— */}
                                     <div className="flex justify-center mt-6 gap-2 flex-wrap">
-                                        {/* First Page Button */}
+                                        {/* « First */}
                                         <button
                                             onClick={() => setPage(1)}
                                             disabled={page === 1}
@@ -132,33 +130,29 @@ const CustomerDashboard = () => {
                                         >
                                             «
                                         </button>
-
-                                        {/* Previous Page */}
+                                        {/* ‹ Prev */}
                                         <button
-                                            onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                                            onClick={() => setPage(p => Math.max(p - 1, 1))}
                                             disabled={page === 1}
                                             className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
                                             title="Previous Page"
                                         >
                                             ‹
                                         </button>
-
-                                        {/* Page Indicator */}
+                                        {/* Page X of Y */}
                                         <span className="px-3 py-1 text-gray-700 font-medium">
                                             Page {page} of {totalPages}
                                         </span>
-
-                                        {/* Next Page */}
+                                        {/* Next › */}
                                         <button
-                                            onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+                                            onClick={() => setPage(p => Math.min(p + 1, totalPages))}
                                             disabled={page === totalPages}
                                             className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50 text-lg"
                                             title="Next Page"
                                         >
                                             ›
                                         </button>
-
-                                        {/* Last Page Button */}
+                                        {/* Last » */}
                                         <button
                                             onClick={() => setPage(totalPages)}
                                             disabled={page === totalPages}
@@ -168,9 +162,6 @@ const CustomerDashboard = () => {
                                             »
                                         </button>
                                     </div>
-
-
-
                                 </>
                             )}
                         </>
@@ -179,10 +170,15 @@ const CustomerDashboard = () => {
                     {activeTab === "bookings" && (
                         <div className="text-center text-gray-500">My Bookings coming soon.</div>
                     )}
+
                     {activeTab === "reviews" && (
                         <div className="text-center text-gray-500">My Reviews coming soon.</div>
                     )}
-                    {activeTab === "profile" && <ProfileSection />}
+
+                    {activeTab === "profile" && (
+                        // **Pass customer profile into the ProfileSection** so it can load or show the form
+                        <ProfileSection user={{ ...customer, id: stored.id }} />
+                    )}
                 </main>
             </div>
         </div>
