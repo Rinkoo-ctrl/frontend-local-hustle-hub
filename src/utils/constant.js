@@ -7,7 +7,7 @@ const categories = [
     "Electrical",
     "Carpentry",
     "Cleaning"
+    
 ];
-
 
 module.exports = { defaultImage, backendBaseUrl, categories };

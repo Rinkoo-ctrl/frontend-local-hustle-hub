@@ -14,21 +14,19 @@ const ServiceCard = ({ service, reviewsData }) => {
 
     const averageRating = reviewsData?.averageRating;
     const totalReviews = reviewsData?.totalReviews;
-
+    
     const ratingDisplay = averageRating ? (
-        <div className="flex items-center space-x-1 cursor-pointer" onClick={() => setOpenModal(true)}>
-            {Array.from({ length: Math.floor(averageRating) }).map((_, i) => (
-                <FaStar key={i} className="text-yellow-400" />
-            ))}
-            <span className="text-sm text-gray-600 font-medium">({totalReviews})</span>
+        <div className="flex items-center space-x-1 text-sm text-gray-700">
+            <FaStar className="text-yellow-500" />
+            <span>{averageRating.toFixed(1)} ({totalReviews} reviews)</span>
         </div>
     ) : (
-        <span className="text-sm text-gray-400">No Rating Yet</span>
-    );
+        <span className="text-xs text-gray-400 italic">Be the first to review!</span>
+    )
 
     return (
         <div className="bg-white rounded-2xl shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-[1.02] hover:shadow-xl border border-gray-100">
-          
+
 
             {/* Content Section */}
             <div className="p-5">
@@ -49,7 +47,7 @@ const ServiceCard = ({ service, reviewsData }) => {
                 )}
 
                 <div className="flex items-center text-gray-500 text-sm mb-3">
-                    <FaMapMarkerAlt className="mr-2 text-red-600" />
+                    <FaMapMarkerAlt className="mr-2 text-red-800" />
                     <span>{distanceText}</span>
                 </div>
 
