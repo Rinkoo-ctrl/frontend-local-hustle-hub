@@ -187,7 +187,7 @@ const ProfileSection = ({ user }) => {
                             />
                         </div>
 
-                        {/* Phone Number */}
+                        Phone Number
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 Phone Number
@@ -277,9 +277,9 @@ const ProfileSection = ({ user }) => {
                         <h2 className="text-3xl font-semibold text-gray-900 mb-1">
                             {profile?.name || "N/A"}
                         </h2>
-                        <p className="text-lg text-gray-500">
+                        {/* <p className="text-lg text-gray-500">
                             {profile?.phoneNumber || "N/A"}
-                        </p>
+                        </p> */}
                     </div>
 
                     {/* Details */}
@@ -295,6 +295,10 @@ const ProfileSection = ({ user }) => {
                         <div>
                             <h3 className="text-lg font-bold text-blue-900 mb-1">Address</h3>
                             <p className="text-gray-700">{profile?.address || "N/A"}</p>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-blue-900 mb-1">Phone No</h3>
+                            <p className="text-gray-700">{profile?.phoneNumber || "N/A"}</p>
                         </div>
                     </div>
                 </div>
