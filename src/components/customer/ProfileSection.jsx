@@ -1,8 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Webcam from "react-webcam";
-import { backendBaseUrl, defaultImage } from "../../utils/constant.js";
-import { FaPlusCircle, FaUserCircle, FaCamera, FaPencilAlt, FaSave, FaTimes, FaUpload, FaTrash } from 'react-icons/fa'; // Using Font Awesome for icons
+import { defaultImage, backendBaseUrl } from "../../utils/constant.js";
+import { getCurrentLocation } from "../../utils/getLocation"; // utility to fetch current location
+import {
+    FaCamera,
+    FaTimes,
+    FaUpload,
+    FaSave,
+    FaMapMarkerAlt
+} from "react-icons/fa";
 
 const ProfileSection = ({ user }) => {
     const [profile, setProfile] = useState(null);
@@ -14,11 +21,13 @@ const ProfileSection = ({ user }) => {
         address: "",
         image: null,
     });
-    const [showImageOptions, setShowImageOptions] = useState(false);
-    const [showCamera, setShowCamera] = useState(false);
-    const webcamRef = useRef(null);
-    const fileInputRef = useRef(null); // Ref for the file input
 
+    const [showCamera, setShowCamera] = useState(false);
+    const [showImageOptions, setShowImageOptions] = useState(false);
+    const webcamRef = useRef(null);
+    const fileInputRef = useRef(null);
+
+    // initialize from props
     useEffect(() => {
         if (user) {
             const data = user.customerProfile || user;
@@ -38,6 +47,18 @@ const ProfileSection = ({ user }) => {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
+    const detectAddress = async () => {
+        try {
+            const loc = await getCurrentLocation();
+            if (loc.address) {
+                setForm((prev) => ({ ...prev, address: loc.address }));
+            }
+        } catch (err) {
+            console.error("Error detecting location", err);
+            alert("Unable to detect location. Please allow location access.");
+        }
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -46,9 +67,13 @@ const ProfileSection = ({ user }) => {
         }
     };
 
+    const handleRemoveImage = () => {
+        setForm((prev) => ({ ...prev, image: null }));
+        setShowImageOptions(false);
+    };
+
     const triggerFileInput = () => {
         fileInputRef.current.click();
-        setShowImageOptions(false);
     };
 
     const capturePhoto = () => {
@@ -66,46 +91,42 @@ const ProfileSection = ({ user }) => {
     const handleSubmit = async () => {
         try {
             const token = localStorage.getItem("token");
-
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
+            const headers = {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
             };
 
-            // Prepare the payload for sending in JSON format
             const payload = {
-                name: form.name || "",
-                phoneNumber: form.phoneNumber || "",
-                gender: form.gender || "",
-                address: form.address || "",
+                name: form.name,
+                phoneNumber: form.phoneNumber,
+                gender: form.gender,
+                address: form.address,
             };
 
-            // If image is provided as a URL or base64 string, add it to the payload
+            // only include image if it's a URL/string
             if (form.image && typeof form.image === "string") {
                 payload.image = form.image;
             }
 
-            // Send the payload in JSON format (no FormData)
-            const res = await axios.post(`${backendBaseUrl}/api/customers`, payload, config);
+            const res = await axios.post(
+                `${backendBaseUrl}/api/customers`,
+                payload,
+                { headers }
+            );
 
-            const savedProfile = res.data;
-
-            // Update state and localStorage
-            setProfile(savedProfile);
+            const saved = res.data;
+            setProfile(saved);
             setIsEditing(false);
 
-            const storedUser = JSON.parse(localStorage.getItem("Hustleuser")) || {};
-            storedUser.customerProfile = savedProfile;
-            localStorage.setItem("Hustleuser", JSON.stringify(storedUser));
-
+            // update localStorage
+            const stored = JSON.parse(localStorage.getItem("Hustleuser")) || {};
+            stored.customerProfile = saved;
+            localStorage.setItem("Hustleuser", JSON.stringify(stored));
         } catch (err) {
-            console.error("Error saving profile:", err);
+            console.error(err);
             alert("Failed to save profile.");
         }
     };
-
 
     const imagePreview =
         form.image && typeof form.image !== "string"
@@ -113,226 +134,271 @@ const ProfileSection = ({ user }) => {
             : form.image || defaultImage;
 
     return (
-        <section className=" py-10">
-            <div className="container mx-auto max-w-4xl bg-white shadow-md rounded-lg overflow-hidden">
-                <div className="px-6 py-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-semibold text-gray-800">
-                            {isEditing ? (profile ? "Edit Profile" : "Create Profile") : "My Profile"}
-                        </h2>
-                        {/* {!isEditing && (
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="inline-flex items-center px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md focus:outline-none transition"
+        <section className="w-full max-w-4xl mx-auto p-8 bg-white rounded-2xl shadow-xl border border-gray-100">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-semibold text-gray-900">
+                    {isEditing ? "Edit Profile" : "My Profile"}
+                </h2>
+                {!isEditing && profile && (
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-all"
+                    >
+                        Edit Profile
+                    </button>
+                )}
+            </div>
+
+            {isEditing ? (
+                <div className="space-y-6">
+                    {/* Avatar */}
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative group">
+                            <img
+                                src={imagePreview}
+                                alt="Profile"
+                                className="w-32 h-32 object-cover rounded-full shadow-lg border-4 border-white ring-2 ring-gray-400 cursor-pointer"
+                                onClick={() => setShowImageOptions(true)}
+                            />
+                            <div
+                                className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                onClick={() => setShowImageOptions(true)}
                             >
-                                <FaPencilAlt className="mr-2" /> {profile ? "Edit" : "Create"}
-                            </button>
-                        )} */}
+                                <span className="text-white text-sm font-medium">Change</span>
+                            </div>
+                        </div>
                     </div>
 
-                    {!profile && !isEditing && (
-                        <div className="text-center py-6">
-                            <FaUserCircle className="mx-auto text-gray-400 text-5xl mb-3" />
-                            <p className="text-gray-600 mb-2">You haven’t created a profile yet.</p>
-                            <button
-                                onClick={() => setIsEditing(true)}
-                                className="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm rounded-md focus:outline-none transition"
-                            >
-                                <FaPlusCircle className="mr-2" /> Create Profile
-                            </button>
-                        </div>
-                    )}
-
-                    {isEditing && (
+                    {/* Form Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Full Name */}
                         <div>
-                            <div className="flex items-center mb-4">
-                                <div className="relative w-24 h-24 rounded-full overflow-hidden mr-6">
-                                    <img
-                                        src={imagePreview}
-                                        alt="profile"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 ease-in-out cursor-pointer" onClick={() => setShowImageOptions(true)}>
-                                        <FaCamera className="text-white text-xl" />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="mb-3">
-                                        <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">Full Name</label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            value={form.name}
-                                            onChange={handleChange}
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            placeholder="Your Full Name"
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label htmlFor="phoneNumber" className="block text-gray-700 text-sm font-bold mb-2">Phone Number</label>
-                                        <input
-                                            type="tel"
-                                            id="phoneNumber"
-                                            name="phoneNumber"
-                                            value={form.phoneNumber}
-                                            onChange={handleChange}
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            placeholder="Your Phone Number"
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label htmlFor="gender" className="block text-gray-700 text-sm font-bold mb-2">Gender</label>
-                                        <select
-                                            id="gender"
-                                            name="gender"
-                                            value={form.gender}
-                                            onChange={handleChange}
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                        >
-                                            <option value="">Select gender</option>
-                                            <option value="male">Male</option>
-                                            <option value="female">Female</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div className="mb-4">
-                                        <label htmlFor="address" className="block text-gray-700 text-sm font-bold mb-2">Address</label>
-                                        <textarea
-                                            id="address"
-                                            name="address"
-                                            value={form.address}
-                                            onChange={handleChange}
-                                            rows="2"
-                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                            placeholder="Your Address"
-                                        ></textarea>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex justify-end">
-                                <button
-                                    onClick={() => setIsEditing(false)}
-                                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded focus:outline-none focus:shadow-outline mr-2"
-                                >
-                                    <FaTimes className="inline-block mr-1" /> Cancel
-                                </button>
-                                <button
-                                    onClick={handleSubmit}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                >
-                                    <FaSave className="inline-block mr-1" /> Save Profile
-                                </button>
-                            </div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                Full Name
+                            </label>
+                            <input
+                                type="text"
+                                name="name"
+                                value={form.name}
+                                onChange={handleChange}
+                                placeholder="Enter your full name"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
                         </div>
-                    )}
 
-                    {!isEditing && profile && (
-                        <div className="bg-white rounded-lg shadow-xl p-6 transition duration-300 ease-in-out hover:shadow-2xl">
-                            <div className="flex items-center space-x-6">
-                                <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200">
-                                    <img
-                                        src={profile.image || defaultImage}
-                                        alt="Profile"
-                                        className="w-full h-full object-cover"
-                                    />
-                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></span>
-                                </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-xl font-semibold text-gray-900">{profile.name}</h3>
-                                    <p className="text-gray-600 text-sm">{profile.phoneNumber || 'N/A'}</p>
-                                    <div className="text-sm text-gray-700">
-                                        <strong className="font-medium mr-1">Gender:</strong> {profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : 'N/A'}
-                                    </div>
-                                    <div className="text-sm text-gray-700">
-                                        <strong className="font-medium mr-1">Address:</strong> {profile.address || 'N/A'}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mt-4 border-t border-gray-200 pt-4 flex justify-end">
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md focus:outline-none transition"
-                                >
-                                    <FaPencilAlt className="mr-2" /> Edit Profile
-                                </button>
-                            </div>
+                        {/* Phone Number */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                Phone Number
+                            </label>
+                            <input
+                                type="tel"
+                                name="phoneNumber"
+                                value={form.phoneNumber}
+                                onChange={handleChange}
+                                placeholder="Enter your phone number"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            />
                         </div>
-                    )}
 
-                    {showImageOptions && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <div className="bg-white rounded-md shadow-lg p-6 w-80">
-                                <h3 className="text-lg font-semibold mb-3">Change Profile Picture</h3>
-                                <button
-                                    onClick={triggerFileInput}
-                                    className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md mb-2 focus:outline-none"
-                                >
-                                    <FaUpload className="inline-block mr-2" /> Upload Image
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setShowCamera(true);
-                                        setShowImageOptions(false);
-                                    }}
-                                    className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md mb-2 focus:outline-none"
-                                >
-                                    <FaCamera className="inline-block mr-2" /> Take Photo
-                                </button>
-                                {profile?.image && (
-                                    <button
-                                        onClick={() => setForm((f) => ({ ...f, image: null }))}
-                                        className="w-full py-2 bg-red-400 hover:bg-red-500 text-white rounded-md focus:outline-none"
-                                    >
-                                        <FaTrash className="inline-block mr-2" /> Remove Image
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => setShowImageOptions(false)}
-                                    className="w-full py-2 text-gray-600 hover:text-gray-800 focus:outline-none mt-3"
-                                >
-                                    Cancel
-                                </button>
-                            </div>
+                        {/* Gender */}
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                Gender
+                            </label>
+                            <select
+                                name="gender"
+                                value={form.gender}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            >
+                                <option value="">Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
-                    )}
 
-                    {showCamera && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                            <div className="bg-white rounded-md shadow-lg p-6 w-80 relative">
-                                <button
-                                    onClick={() => setShowCamera(false)}
-                                    className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                                >
-                                    <FaTimes />
-                                </button>
-                                <Webcam
-                                    audio={false}
-                                    ref={webcamRef}
-                                    screenshotFormat="image/jpeg"
-                                    videoConstraints={{ facingMode: "user" }}
-                                    className="rounded-md w-full mb-3"
+                        {/* Address + Detect */}
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                Address
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <textarea
+                                    name="address"
+                                    value={form.address}
+                                    onChange={handleChange}
+                                    rows="2"
+                                    placeholder="Enter your address"
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
                                 />
                                 <button
-                                    onClick={capturePhoto}
-                                    className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md focus:outline-none"
+                                    type="button"
+                                    onClick={detectAddress}
+                                    className="p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all"
+                                    title="Detect my location"
                                 >
-                                    Capture
+                                    <FaMapMarkerAlt />
                                 </button>
                             </div>
                         </div>
-                    )}
+                    </div>
 
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                        className="hidden"
-                        ref={fileInputRef}
-                    />
+                    {/* Submit / Cancel */}
+                    <div className="flex justify-end gap-4">
+                        <button
+                            onClick={handleSubmit}
+                            className="px-6 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-all"
+                        >
+                            <FaSave className="inline-block mr-2" />
+                            Save Profile
+                        </button>
+                        <button
+                            onClick={() => setIsEditing(false)}
+                            className="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-600 transition-all"
+                        >
+                            <FaTimes className="inline-block mr-2" />
+                            Cancel
+                        </button>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                /* View Mode */
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Picture & Basic */}
+                    <div className="md:col-span-1 flex flex-col items-center">
+                        <img
+                            src={profile?.image || defaultImage}
+                            alt="Profile"
+                            className="w-48 h-48 rounded-full object-cover border-4 border-white shadow-md mb-4"
+                        />
+                        <h2 className="text-3xl font-semibold text-gray-900 mb-1">
+                            {profile?.name || "N/A"}
+                        </h2>
+                        <p className="text-lg text-gray-500">
+                            {profile?.phoneNumber || "N/A"}
+                        </p>
+                    </div>
+
+                    {/* Details */}
+                    <div className="md:col-span-2 space-y-6">
+                        <div>
+                            <h3 className="text-lg font-bold text-blue-900 mb-1">Gender</h3>
+                            <p className="text-gray-700">
+                                {profile?.gender
+                                    ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)
+                                    : "N/A"}
+                            </p>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-blue-900 mb-1">Address</h3>
+                            <p className="text-gray-700">{profile?.address || "N/A"}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Hidden File Input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+            />
+
+            {/* Image Options Modal */}
+            {showImageOptions && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+                    onClick={() => setShowImageOptions(false)}
+                >
+                    <div
+                        className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md text-center flex flex-col gap-4 border border-gray-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-xl font-semibold text-gray-900">
+                            Change Profile Picture
+                        </h3>
+                        <button
+                            onClick={triggerFileInput}
+                            className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
+                        >
+                            <FaUpload className="inline-block mr-2" />
+                            Upload from Device
+                        </button>
+                        <button
+                            onClick={() => {
+                                setShowCamera(true);
+                                setShowImageOptions(false);
+                            }}
+                            className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-all"
+                        >
+                            <FaCamera className="inline-block mr-2" />
+                            Capture via Camera
+                        </button>
+                        {profile?.image && (
+                            <button
+                                onClick={handleRemoveImage}
+                                className="w-full bg-white text-red-700 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-700 hover:text-white transition-all"
+                            >
+                                Remove Current Image
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setShowImageOptions(false)}
+                            className="text-sm text-gray-800 hover:text-gray-700 transition-all"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Webcam Modal */}
+            {showCamera && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm"
+                    onClick={() => setShowCamera(false)}
+                >
+                    <div
+                        className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md text-center flex flex-col gap-4 border border-gray-200 relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setShowCamera(false)}
+                            className="absolute top-3 right-3 text-gray-400 hover:text-red-600 text-xl font-semibold"
+                            aria-label="Close camera"
+                        >
+                            ×
+                        </button>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                            Capture Photo
+                        </h3>
+                        <Webcam
+                            audio={false}
+                            ref={webcamRef}
+                            screenshotFormat="image/jpeg"
+                            videoConstraints={{ facingMode: "user" }}
+                            className="rounded-lg w-full aspect-video object-cover"
+                        />
+                        <button
+                            onClick={capturePhoto}
+                            className="w-full bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-700 transition-all"
+                        >
+                            Capture Photo
+                        </button>
+                        <button
+                            onClick={() => setShowCamera(false)}
+                            className="text-sm text-gray-800 hover:text-gray-700 transition-all"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
         </section>
     );
 };

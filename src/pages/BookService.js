@@ -4,11 +4,14 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { backendBaseUrl } from "../utils/constant.js";
+import { useNavigate } from "react-router-dom";
+
 
 const BookService = () => {
     const { serviceId } = useParams();
     const [date, setDate] = useState("");
     const [service, setService] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchService = async () => {
@@ -104,6 +107,7 @@ const BookService = () => {
 
                         if (verifyRes.data.success) {
                             toast.success("Payment successful & Booking confirmed!");
+                            navigate("/customer/dashboard");
                         } else {
                             toast.error("Payment verification failed!");
                         }
