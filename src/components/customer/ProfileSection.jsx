@@ -187,7 +187,7 @@ const ProfileSection = ({ user }) => {
                             />
                         </div>
 
-                        Phone Number
+
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 Phone Number
@@ -203,7 +203,7 @@ const ProfileSection = ({ user }) => {
                         </div>
 
                         {/* Gender */}
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-gray-700 mb-1">
                                 Gender
                             </label>
@@ -211,7 +211,7 @@ const ProfileSection = ({ user }) => {
                                 name="gender"
                                 value={form.gender}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                className="w-full md:w-3/4 lg:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                             >
                                 <option value="">Select gender</option>
                                 <option value="male">Male</option>
@@ -219,6 +219,7 @@ const ProfileSection = ({ user }) => {
                                 <option value="other">Other</option>
                             </select>
                         </div>
+
 
                         {/* Address + Detect */}
                         <div className="md:col-span-2">
@@ -312,7 +313,6 @@ const ProfileSection = ({ user }) => {
                 onChange={handleImageChange}
                 className="hidden"
             />
-
             {/* Image Options Modal */}
             {showImageOptions && (
                 <div
@@ -343,7 +343,7 @@ const ProfileSection = ({ user }) => {
                             <FaCamera className="inline-block mr-2" />
                             Capture via Camera
                         </button>
-                        {profile?.image && (
+                        {form.image && (
                             <button
                                 onClick={handleRemoveImage}
                                 className="w-full bg-white text-red-700 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-700 hover:text-white transition-all"
@@ -360,6 +360,7 @@ const ProfileSection = ({ user }) => {
                     </div>
                 </div>
             )}
+
 
             {/* Webcam Modal */}
             {showCamera && (
