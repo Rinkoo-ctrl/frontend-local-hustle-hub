@@ -221,9 +221,17 @@ const CustomerDashboard = () => {
 
                                             <div className="flex items-center justify-between mt-4">
                                                 <span
-                                                    className={`text-sm font-semibold px-3 py-1 rounded-full ${b.status === "confirmed"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-yellow-100 text-yellow-700"
+                                                    className={`text-sm font-semibold px-3 py-1 rounded-full ${b.status === "pending"
+                                                        ? "bg-yellow-100 text-yellow-700"
+                                                        : b.status === "accepted"
+                                                            ? "bg-blue-100 text-blue-700"
+                                                            : b.status === "rejected"
+                                                                ? "bg-red-100 text-red-700"
+                                                                : b.status === "completed"
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : b.status === "active"
+                                                                        ? "bg-purple-100 text-purple-700"
+                                                                        : "bg-gray-100 text-gray-700"
                                                         }`}
                                                 >
                                                     {b.status}
