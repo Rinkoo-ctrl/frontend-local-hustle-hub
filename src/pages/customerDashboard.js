@@ -10,6 +10,7 @@ import { backendBaseUrl } from "../utils/constant.js";
 
 const CustomerDashboard = () => {
     const [activeTab, setActiveTab] = useState("services");
+    const [bookings, setBookings] = useState([]);
     const stored = JSON.parse(localStorage.getItem("Hustleuser")) || {};
     const customer = stored.customerProfile || {};
 
@@ -60,6 +61,26 @@ const CustomerDashboard = () => {
 
         fetchServices();
     }, [searchTerm, categories, location, page]);
+
+    useEffect(() => {
+        const fetchBookings = async () => {
+            if (activeTab !== "bookings") return;
+            setLoading(true);
+            try {
+                const token = localStorage.getItem("token");
+                const { data } = await axios.get(`${backendBaseUrl}/api/bookings/my-bookings`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setBookings(data.bookings || []);
+            } catch (err) {
+                console.error("Error fetching bookings:", err);
+                setBookings([]);
+            }
+            setLoading(false);
+        };
+
+        fetchBookings();
+    }, [activeTab]);
 
     // helper to reset to first page when filters/search change
     const resetAndSetPage = (setter) => (value) => {
@@ -168,7 +189,59 @@ const CustomerDashboard = () => {
                     )}
 
                     {activeTab === "bookings" && (
-                        <div className="text-center text-gray-500">My Bookings coming soon.</div>
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4">My Bookings</h2>
+                            {loading ? (
+                                <div className="text-gray-500">Loading bookings…</div>
+                            ) : bookings.length === 0 ? (
+                                <div className="text-gray-500">No bookings found.</div>
+                            ) : (
+                                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                    {bookings.map((b) => (
+                                        <div
+                                            key={b._id}
+                                            className="bg-white rounded-2xl shadow-md p-5 border hover:shadow-lg transition"
+                                        >
+                                            <h3 className="text-xl font-bold text-gray-800 mb-2">
+                                                {b.serviceId?.title || "Unknown Service"}
+                                            </h3>
+                                            <p className="text-sm  text-red-500 mb-2">
+                                                {(b.paymentId || "------------------").toUpperCase()}
+                                            </p>
+
+                                            <p className="text-gray-600 mb-1">
+                                                <span className="font-medium">Category:</span> {b.serviceId?.category || "N/A"}
+                                            </p>
+                                            <p className="text-gray-600 mb-1">
+                                                <span className="font-medium">Price:</span> ₹{b.amount}
+                                            </p>
+                                            <p className="text-gray-600 mb-1">
+                                                <span className="font-medium">Date:</span> {new Date(b.date).toLocaleDateString()}
+                                            </p>
+
+                                            <div className="flex items-center justify-between mt-4">
+                                                <span
+                                                    className={`text-sm font-semibold px-3 py-1 rounded-full ${b.status === "confirmed"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-yellow-100 text-yellow-700"
+                                                        }`}
+                                                >
+                                                    {b.status}
+                                                </span>
+                                                <span
+                                                    className={`text-sm font-semibold px-3 py-1 rounded-full ${b.paymentStatus === "paid"
+                                                        ? "bg-blue-100 text-blue-700"
+                                                        : "bg-red-100 text-red-700"
+                                                        }`}
+                                                >
+                                                    {b.paymentStatus}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
 
                     {activeTab === "reviews" && (
