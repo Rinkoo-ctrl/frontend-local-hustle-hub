@@ -46,7 +46,8 @@ const CustomerDashboard = () => {
                     page,
                     limit: 6,
                 };
-                const { data } = await axios.get(`${backendBaseUrl}/api/services`, {
+                console.log(token, "JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ")
+                const { data } = await axios.get(`${backendBaseUrl}/api/services/`, {
                     params,
                     headers: { Authorization: `Bearer ${token}` },
                 });

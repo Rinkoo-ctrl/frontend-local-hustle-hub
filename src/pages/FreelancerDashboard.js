@@ -4,6 +4,7 @@ import Topbar from "../components/Topbar";
 import ProfileSection from "../components/ProfileSection.jsx";
 import ServiceForm from "../components/ServiceForm";
 import ServiceList from "../components/ServiceList";
+import MyOrders from "../components/MyOrders";
 
 const FreelancerDashboard = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -16,6 +17,8 @@ const FreelancerDashboard = () => {
                 return <ServiceForm />;
             case "myServices":
                 return <ServiceList />;
+            case "orders":
+                return <MyOrders />;
             default:
                 return <ProfileSection />;
         }
