@@ -7,7 +7,7 @@ import Topbar from "../components/Topbar";
 import ProfileSection from "../components/ProfileSection.jsx";
 import ServiceForm from "../components/ServiceForm";
 import ServiceList from "../components/ServiceList";
-import MyOrders from "../components/MyOrders";
+import MyOrders from "../components/MyOrders.jsx";
 
 const FreelancerDashboard = () => {
     const [activeTab, setActiveTab] = useState("dashboard");

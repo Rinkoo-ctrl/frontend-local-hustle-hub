@@ -1,4 +1,3 @@
-// src/components/OrdersComponent.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { backendBaseUrl } from "../utils/constant.js";
@@ -47,12 +46,13 @@ const OrdersComponent = () => {
     const markAsCompleted = async (bookingId) => {
         try {
             const token = localStorage.getItem("token");
+            // Call the correct API endpoint
             await axios.patch(
-                `${backendBaseUrl}/api/bookings/${bookingId}/status`,
-                { status: "completed" },
+                `${backendBaseUrl}/api/bookings/mark-complete/${bookingId}`,  // Correct endpoint here
+                {},  // Empty body, as it's just marking it completed
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            // refresh the list
+            // Refresh the list of orders
             fetchOrders();
         } catch (err) {
             console.error("Error marking complete:", err);
@@ -153,8 +153,8 @@ const OrdersComponent = () => {
                                         <strong>Payment:</strong>{" "}
                                         <span
                                             className={`px-2 py-0.5 rounded text-sm ${order.paymentStatus === "paid"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-yellow-100 text-yellow-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : "bg-yellow-100 text-yellow-800"
                                                 }`}
                                         >
                                             {order.paymentStatus.toUpperCase()}
