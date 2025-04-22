@@ -1,6 +1,8 @@
 // src/pages/CustomerDashboard.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // for redirect
+import { jwtDecode } from "jwt-decode";
 import CategoryFilter from "../components/CategoryFilter.jsx";
 import ServiceCard from "../components/ServiceCard.jsx";
 import Sidebar from "../components/customer/Sidebar.jsx";
@@ -13,7 +15,6 @@ const CustomerDashboard = () => {
     const [bookings, setBookings] = useState([]);
     const stored = JSON.parse(localStorage.getItem("Hustleuser")) || {};
     const customer = stored.customerProfile || {};
-
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -21,6 +22,27 @@ const CustomerDashboard = () => {
     const [location, setLocation] = useState(null);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                const currentTime = Date.now() / 1000;
+                if (decodedToken.exp < currentTime) {
+                    // Token is expired, redirect to login
+                    navigate("/login");
+                }
+            } catch (error) {
+                console.error("Error decoding token:", error);
+                navigate("/login");
+            }
+        } else {
+            navigate("/login"); // If no token, redirect to login
+        }
+    }, [navigate]);
 
     // 1. Get geolocation or fallback
     useEffect(() => {

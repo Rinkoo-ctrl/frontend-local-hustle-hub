@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // for redirect
+import { jwtDecode } from "jwt-decode";
+
 import Sidebar from "../components/freelancer/Sidebar.jsx";
 import Topbar from "../components/Topbar";
 import ProfileSection from "../components/ProfileSection.jsx";
@@ -8,6 +11,30 @@ import MyOrders from "../components/MyOrders";
 
 const FreelancerDashboard = () => {
     const [activeTab, setActiveTab] = useState("dashboard");
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = localStorage.getItem("token"); // or use cookies if needed
+        if (!token) {
+            navigate("/login"); // no token, go to login
+
+            return;
+        }
+
+        try {
+            const decoded = jwtDecode(token);
+            const currentTime = Date.now() / 1000; // in seconds
+            if (decoded.exp < currentTime) {
+                // Token expired
+                localStorage.removeItem("token"); // optional: clear token
+                navigate("/login");
+            }
+        } catch (error) {
+            // Invalid token
+            localStorage.removeItem("token");
+            navigate("/login");
+        }
+    }, [navigate]);
 
     const renderContent = () => {
         switch (activeTab) {
