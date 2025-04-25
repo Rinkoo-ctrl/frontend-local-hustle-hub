@@ -8,6 +8,7 @@ import ServiceCard from "../components/ServiceCard.jsx";
 import Sidebar from "../components/customer/Sidebar.jsx";
 import Topbar from "../components/Topbar.jsx";
 import ProfileSection from "../components/customer/ProfileSection.jsx";
+import Reviews from "../components/customer/Reviews.jsx";
 import { backendBaseUrl } from "../utils/constant.js";
 
 const CustomerDashboard = () => {
@@ -276,7 +277,7 @@ const CustomerDashboard = () => {
                     )}
 
                     {activeTab === "reviews" && (
-                        <div className="text-center text-gray-500">My Reviews coming soon.</div>
+                        <Reviews user={stored} />
                     )}
 
                     {activeTab === "profile" && (
